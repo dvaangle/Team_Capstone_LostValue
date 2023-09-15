@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    #region Variable
+    public static PlayerController instance = null;
     private Rigidbody2D rb2D;
     [Header("Movement System")]
     [SerializeField]
@@ -26,15 +28,14 @@ public class PlayerController : MonoBehaviour
 
     public Transform groundCheck; 
     public LayerMask groundLayer;
+    #endregion
 
-    // Start is called before the first frame update
     void Start()
     {
         vecGravity = new Vector2(0, -Physics2D.gravity.y);
         rb2D = gameObject.GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         moveHorizontal = Input.GetAxisRaw("Horizontal");
