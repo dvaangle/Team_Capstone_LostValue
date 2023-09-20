@@ -88,7 +88,14 @@ public class PlayerController : MonoBehaviour
         {
             rb2D.AddForce(new Vector2(moveHorizontal * moveSpeed, 0f), ForceMode2D.Impulse);
         }
-
+        if(moveHorizontal > 0)
+        {
+            gameObject.transform.localScale = new Vector3(1, 1, 1);
+        }
+        if(moveHorizontal < 0)
+        {
+            gameObject.transform.localScale = new Vector3(-1, 1, 1);
+        }
     }
 
     bool isGrounded()
