@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
     #region Variable
     public static PlayerController instance = null;
     private Rigidbody2D rb2D;
+
 
     [Header("Movement System")]
     [SerializeField]
@@ -27,18 +29,17 @@ public class PlayerController : MonoBehaviour
 
     [Header("Dash System")]
     [SerializeField]
-    private float dashVelocity = 24f;
+    private float dashVelocity; // 대쉬 속도
     [SerializeField]
-    private float dashTime = 0.5f;
+    private float MaxDashDuration; // 대쉬 지속시간
     [SerializeField]
-    private float dashCooltime = 1f;
-    [SerializeField]
-    private TrailRenderer tr;
+    private float dashCooltime; // 대쉬 쿨타임
 
     private bool canDash = true;
     private bool isDashing;
-    bool isJumping;
-    float jumpCounter;
+    private bool isJumping;
+    private float jumpCounter;
+    private float dashDuration;
 
     public Transform groundCheck;
     public LayerMask groundLayer;
@@ -47,8 +48,8 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        vecGravity = new Vector2(0, -Physics2D.gravity.y);
         rb2D = gameObject.GetComponent<Rigidbody2D>();
+        vecGravity = new Vector2(0, -Physics2D.gravity.y);
     }
 
     void Update()
@@ -109,6 +110,11 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (isDashing)
+        {
+            return;
+        }
+
         if (moveHorizontal > 0.1f || moveHorizontal < -0.1f)
         {
             rb2D.AddForce(new Vector2(moveHorizontal * moveSpeed, 0f), ForceMode2D.Impulse);
@@ -143,13 +149,21 @@ public class PlayerController : MonoBehaviour
         isDashing = true;
         float originalGravity = rb2D.gravityScale;
         rb2D.gravityScale = 0f;
-        rb2D.velocity = new Vector2(transform.localScale.x * dashVelocity, 0f);
-        tr.emitting = true;
-        yield return new WaitForSeconds(dashTime* Time.deltaTime);
-        tr.emitting = false;
+        for (dashDuration = 0.0f; dashDuration < MaxDashDuration; dashDuration += Time.deltaTime)
+        {
+            rb2D.velocity = new Vector2(transform.localScale.x * dashVelocity, 0f);
+            yield return null;
+
+            if(dashDuration >= MaxDashDuration)
+            {
+                dashDuration = 0;
+            }
+        }
+        
+        rb2D.velocity = new Vector2(0f, 0f); //대쉬 직후 약간 끊기게 할것인지
         rb2D.gravityScale = originalGravity;
         isDashing = false;
-        yield return new WaitForSeconds(dashCooltime * Time.deltaTime);
+        yield return new WaitForSeconds(dashCooltime);
         canDash = true;
     }
 }
