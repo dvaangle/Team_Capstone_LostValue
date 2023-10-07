@@ -159,7 +159,7 @@ MonoBehaviour:
   jumpForce: 20
   fallMultiplier: 8
   jumpMultiplier: 9
-  dashVelocity: 25
+  dashVelocity: 28
   MaxDashDuration: 0.2
   dashCooltime: 1
   groundCheck: {fileID: 601540333}
