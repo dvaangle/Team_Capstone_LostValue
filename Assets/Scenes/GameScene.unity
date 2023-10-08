@@ -201,7 +201,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 7.5
   jumpTime: 0.35
-  jumpForce: 8
+  jumpForce: 7
   fallMultiplier: 40
   jumpMultiplier: 60
   extraHeight: 0.25
@@ -211,7 +211,6 @@ MonoBehaviour:
   dashVelocity: 28
   MaxDashDuration: 0.2
   dashCooltime: 1
-  groundCheck: {fileID: 0}
 --- !u!70 &219232060
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

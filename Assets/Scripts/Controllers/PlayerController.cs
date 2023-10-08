@@ -71,7 +71,7 @@ public class PlayerController : MonoBehaviour
         Move();
         Jump();
 
-        if(Input.GetKeyDown(KeyCode.X) && canDash)
+        if(InputManager.instance.player_InputSettings.Dashing.Dash.IsPressed() && canDash)
         {
             StartCoroutine(Dash());
         }
