@@ -5,16 +5,16 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    #region Variable
+    #region Variables
     public static PlayerController instance = null;
     private Rigidbody2D rb2D;
+    private Collider2D coll;
 
 
     [Header("Movement System")]
     [SerializeField]
     private float moveSpeed; // 움직임 속도
-    private float moveHorizontal;
-    private bool facingRight = true;
+    private bool isFacingRight = true;
 
     [Header("Jump System")]
     [SerializeField]
@@ -27,6 +27,13 @@ public class PlayerController : MonoBehaviour
     float jumpMultiplier; // 점프 가속도에 관여하는 계수
     private Vector2 vecGravity;
 
+    [Header("Ground Check")]
+    [SerializeField]
+    private float extraHeight = 0.25f;
+    [SerializeField]
+    private LayerMask whatIsGround;
+
+
     [Header("Dash System")]
     [SerializeField]
     private float dashVelocity; // 대쉬 속도
@@ -35,21 +42,23 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float dashCooltime; // 대쉬 쿨타임
 
+    private float moveInput_X;
     private bool canDash = true;
     private bool isDashing;
     private bool isJumping;
-    private float jumpCounter;
+    private bool isFalling;
+    private float jumpTimeCounter;
     private float dashDuration;
-
-    public Transform groundCheck;
-    public LayerMask groundLayer;
+    private RaycastHit2D groundHit;
 
     #endregion
 
     void Start()
     {
         rb2D = gameObject.GetComponent<Rigidbody2D>();
+        coll = gameObject.GetComponent<Collider2D>();
         vecGravity = new Vector2(0, -Physics2D.gravity.y);
+        StartDirectionCheck();
     }
 
     void Update()
@@ -59,50 +68,10 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        moveHorizontal = Input.GetAxisRaw("Horizontal");
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded())
-        {
-            rb2D.velocity = new Vector2(rb2D.velocity.x, jumpForce);
-            isJumping = true;
-            jumpCounter = 0;
-        }
+        Move();
+        Jump();
 
-        if (rb2D.velocity.y > 0 && isJumping)
-        {
-            jumpCounter += Time.deltaTime;
-            if (jumpCounter > jumpTime)
-            {
-                isJumping = false;
-            }
-
-            float t = jumpCounter / jumpTime;
-            float currentJumpM = jumpMultiplier;
-
-            if (t > 0.5f)
-            {
-                currentJumpM = jumpMultiplier * (1 - t);
-            }
-
-            rb2D.velocity += vecGravity * currentJumpM * Time.deltaTime;
-        }
-
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            isJumping = false;
-            jumpCounter = 0;
-
-            if (rb2D.velocity.y > 0)
-            {
-                rb2D.velocity = new Vector2(rb2D.velocity.x, rb2D.velocity.y * 0.6f);
-            }
-        }
-
-        if (rb2D.velocity.y < 0)
-        {
-            rb2D.velocity -= vecGravity * fallMultiplier * Time.deltaTime;
-        }
-
-        if(Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        if(Input.GetKeyDown(KeyCode.X) && canDash)
         {
             StartCoroutine(Dash());
         }
@@ -114,35 +83,178 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
+    }
 
-        if (moveHorizontal > 0.1f || moveHorizontal < -0.1f)
+    #region Movement Func
+    private void Move()
+    {
+        moveInput_X = InputManager.instance.moveInput.x;
+
+        if(moveInput_X > 0 || moveInput_X < 0)
         {
-            rb2D.AddForce(new Vector2(moveHorizontal * moveSpeed, 0f), ForceMode2D.Impulse);
+            TrunCheck();
         }
-        if (moveHorizontal > 0 && !facingRight)
+
+        rb2D.velocity = new Vector2(moveInput_X * moveSpeed, rb2D.velocity.y);
+    }
+    #endregion
+
+    #region TurnCheck
+    private void StartDirectionCheck()
+    {
+        if(moveInput_X > 0)
         {
-            Flip();
+            isFacingRight = true;
         }
-        if (moveHorizontal < 0 && facingRight)
+        else
         {
-            Flip();
+            isFacingRight = false;
         }
     }
 
+    private void TrunCheck()
+    {
+        if(InputManager.instance.moveInput.x > 0 && !isFacingRight)
+        {
+            Turn();
+        }
+        else if(InputManager.instance.moveInput.x < 0 && isFacingRight)
+        {
+            Turn();
+        }
+    }
+    void Turn()
+    {
+        if(isFacingRight)
+        {
+            Vector3 rotator = new Vector3(transform.rotation.x, 180f, transform.rotation.z);
+            transform.rotation = Quaternion.Euler(rotator);
+            isFacingRight = !isFacingRight;
+        }
+        else
+        {
+            Vector3 rotator = new Vector3(transform.rotation.x, 0f, transform.rotation.z);
+            transform.rotation = Quaternion.Euler(rotator);
+            isFacingRight = !isFacingRight;
+        }
+    }
+    #endregion
+
+    #region Jump
+    private void Jump()
+    {
+        //버튼이 눌렸을 때
+        if(InputManager.instance.player_InputSettings.Jumping.Jump.WasPressedThisFrame() && isGrounded())
+        {
+            isJumping = true;
+            jumpTimeCounter = 0; 
+            rb2D.velocity = new Vector2(rb2D.velocity.x, jumpForce);
+        }
+
+        //버튼이 눌리는 중일 때
+        if(InputManager.instance.player_InputSettings.Jumping.Jump.IsPressed())
+        {
+            if(jumpTimeCounter >= 0 && jumpTimeCounter < jumpTime && isJumping)
+            {
+                rb2D.velocity = new Vector2(rb2D.velocity.x, jumpForce);
+                jumpTimeCounter += Time.deltaTime;
+
+                float t = jumpTimeCounter / jumpTime;
+                float currentJumpMultiplier = jumpMultiplier;
+
+                if (t > 0.5f)
+                {
+                    currentJumpMultiplier = jumpMultiplier * (1 - t);
+                }
+
+                rb2D.velocity += vecGravity * currentJumpMultiplier * Time.deltaTime;
+            }
+            else if(jumpTimeCounter == jumpTime)
+            {
+                isFalling = true;
+                isJumping = false;
+
+                rb2D.velocity -= vecGravity * fallMultiplier * Time.deltaTime;
+            }
+            else
+            {
+                isJumping = false;
+            }
+
+        }
+
+        //버튼을 뗄 때
+        if (InputManager.instance.player_InputSettings.Jumping.Jump.WasReleasedThisFrame())
+        {
+            isJumping = false;
+            isFalling = true;
+        }
+
+        DrawGroundCheck();
+    }
+
+    #endregion
+
+    #region Ground/Landed Check
     bool isGrounded()
     {
-        return Physics2D.OverlapCapsule(groundCheck.position, new Vector2(1f, 0.05f), CapsuleDirection2D.Horizontal, 0, groundLayer);
+        groundHit = Physics2D.BoxCast(coll.bounds.center, coll.bounds.size, 0f, Vector2.down, extraHeight, whatIsGround);
+
+        if(groundHit.collider != null)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    void Flip()
+    private bool CheckForLand()
     {
-        Vector3 currentScale = gameObject.transform.localScale;
-        currentScale.x *= -1;
-        gameObject.transform.localScale = currentScale;
+        if(isFalling)
+        {
+            if(isGrounded())
+            {
+                isFalling = false;
 
-        facingRight = !facingRight;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
     }
 
+    #endregion
+
+    #region Debug Func
+    
+    private void DrawGroundCheck()
+    {
+        Color rayColor;
+
+        if(isGrounded())
+        {
+            rayColor = Color.green;
+        }
+        else
+        {
+            rayColor = Color.red;
+        }
+
+        Debug.DrawRay(coll.bounds.center + new Vector3(coll.bounds.extents.x, 0), Vector2.down * (coll.bounds.extents.y + extraHeight), rayColor);
+        Debug.DrawRay(coll.bounds.center - new Vector3(coll.bounds.extents.x, 0), Vector2.down * (coll.bounds.extents.y + extraHeight), rayColor);
+        Debug.DrawRay(coll.bounds.center - new Vector3(coll.bounds.extents.x, coll.bounds.extents.y + extraHeight), Vector2.right * (coll.bounds.extents.x * 2), rayColor);
+    }
+    #endregion
+
+    #region Dash
     private IEnumerator Dash()
     {
         canDash = false;
@@ -151,7 +263,15 @@ public class PlayerController : MonoBehaviour
         rb2D.gravityScale = 0f;
         for (dashDuration = 0.0f; dashDuration < MaxDashDuration; dashDuration += Time.deltaTime)
         {
-            rb2D.velocity = new Vector2(transform.localScale.x * dashVelocity, 0f);
+            if(isFacingRight)
+            {
+                rb2D.velocity = new Vector2(dashVelocity, 0f);
+            }
+            else if(!isFacingRight)
+            {
+                rb2D.velocity = new Vector2(dashVelocity * -1, 0f);
+
+            }
             yield return null;
 
             if(dashDuration >= MaxDashDuration)
@@ -166,4 +286,6 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(dashCooltime);
         canDash = true;
     }
+
+    #endregion
 }
