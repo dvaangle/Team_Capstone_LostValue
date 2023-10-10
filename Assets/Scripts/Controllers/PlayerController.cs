@@ -7,6 +7,9 @@ public class PlayerController : MonoBehaviour
 {
     #region Variables
     public static PlayerController instance = null;
+    public bool ShouldBeDamaging { get; private set; } = false;
+
+    private List<Damageable> damageables = new List<Damageable>();
     private Rigidbody2D rb2D;
     private Collider2D coll;
 
@@ -42,6 +45,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float dashCooltime; // 대쉬 쿨타임
 
+    [Header("Attack System")]
+    [SerializeField]
+    private Transform attackTransform;
+    [SerializeField]
+    private float attackRange;
+    [SerializeField]
+    private float damageAmount;
+    [SerializeField]
+    private float attackDelay;
+    [SerializeField]
+    private LayerMask attackableLayer;
+
     private float moveInput_X;
     private bool canDash = true;
     private bool isDashing;
@@ -49,7 +64,9 @@ public class PlayerController : MonoBehaviour
     private bool isFalling;
     private float jumpTimeCounter;
     private float dashDuration;
+    private float attackTimeCounter;
     private RaycastHit2D groundHit;
+    private RaycastHit2D[] hits;
 
     #endregion
 
@@ -58,6 +75,10 @@ public class PlayerController : MonoBehaviour
         rb2D = gameObject.GetComponent<Rigidbody2D>();
         coll = gameObject.GetComponent<Collider2D>();
         vecGravity = new Vector2(0, -Physics2D.gravity.y);
+
+        //시작하자마자 공격 할수 있게(없으면 게임 시작하고 딜레이 시간동안 공격x)
+        attackTimeCounter = attackDelay;
+
         StartDirectionCheck();
     }
 
@@ -75,6 +96,16 @@ public class PlayerController : MonoBehaviour
         {
             StartCoroutine(Dash());
         }
+
+        if(InputManager.instance.player_InputSettings.Attacking.Attack.WasPressedThisFrame() && attackTimeCounter >= attackDelay)
+        {
+            //reset counter
+            attackTimeCounter = 0f;
+
+            Attack();
+        }
+
+        attackTimeCounter += Time.deltaTime;
     }
 
     private void FixedUpdate()
@@ -285,6 +316,77 @@ public class PlayerController : MonoBehaviour
         isDashing = false;
         yield return new WaitForSeconds(dashCooltime);
         canDash = true;
+    }
+
+    #endregion
+
+    private void Attack()
+    {
+        hits = Physics2D.CircleCastAll(attackTransform.position, attackRange, transform.right, 0f, attackableLayer);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Damageable damageable = hits[i].collider.gameObject.GetComponent<Damageable>();
+
+            if (damageable != null)
+            {
+                damageable.Damage(damageAmount);
+            }
+        }
+    }
+
+    /*    public IEnumerator DamageWhileAttackIsActive()
+        {
+            ShouldBeDamaging = true;
+
+            while(ShouldBeDamaging)
+            {
+                hits = Physics2D.CircleCastAll(attackTransform.position, attackRange, transform.right, 0f, attackableLayer);
+
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    Damageable damageable = hits[i].collider.gameObject.GetComponent<Damageable>();
+
+                    //if we found an iDamageable
+                    if (damageable != null && damageables.Contains(damageable))
+                    {
+                        //apply damage
+                        damageable.Damage(damageAmount);
+                        damageables.Add(damageable);
+                    }
+                }
+
+                yield return null;
+            }
+            ReturnAttablesToDamageable();
+
+        }
+
+        private void ReturnAttablesToDamageable()
+        {
+            foreach(Damageable thingThatWasDamaged in damageables)
+            {
+                thingThatWasDamaged.HasTakenDamage = false;
+            }
+
+            damageables.Clear();
+        }
+    */
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.DrawWireSphere(attackTransform.position, attackRange);
+    }
+
+    #region Animation Triggers
+
+    public void ShouldBeDamagingToTrue()
+    {
+        ShouldBeDamaging = true;
+    }
+
+    public void ShouldBeDamagingToFalse()
+    {
+        ShouldBeDamaging = false;
     }
 
     #endregion

@@ -128,6 +128,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Attacking",
+            "id": "6fd99ca7-518c-49f0-a9f2-b3217db0fcaa",
+            "actions": [
+                {
+                    "name": "Attack",
+                    "type": "PassThrough",
+                    "id": "eeec38c5-1a98-45dd-8961-669e16512fd5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "b74638e5-c02f-4061-8e58-d95a9d6ca288",
+                    "path": "<Keyboard>/z",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": [
