@@ -51,7 +51,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float attackRange;
     [SerializeField]
-    private float damageAmount;
+    private float damageAmount_NormalAttack;
     [SerializeField]
     private float attackDelay;
     [SerializeField]
@@ -330,9 +330,11 @@ public class PlayerController : MonoBehaviour
 
             if (damageable != null)
             {
-                damageable.Damage(damageAmount);
+                damageable.Damage(damageAmount_NormalAttack);
             }
         }
+
+        Debug.Log("normal Attack");
     }
 
     /*    public IEnumerator DamageWhileAttackIsActive()
