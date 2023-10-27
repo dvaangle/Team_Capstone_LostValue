@@ -8,9 +8,11 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
 
     [Header("Status")]
     [SerializeField]
-    private float maxHealth; //적 체력
+    private float maxHealth_Wolf; //적 체력
     [SerializeField]
-    private float moveSpeed; //이동 속도
+    private float moveSpeed_Wolf; //이동 속도
+    [SerializeField]
+    private float damage_Wolf;
 
     [Header("For Patrolling")] //배회 범위 체크는 마름모 모양의 체크포인트 기준으로 벽이 닿거나, 땅이 안닿으면 반대로감
     [SerializeField]
@@ -44,6 +46,8 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
     [SerializeField]
     private Animator Anim_Enemy_Wolf;
 
+    private Vector3 enemy_Wolf_Position;
+    private float lineOfSite_Pivot;
     private float moveDirection = 1;
     private float currentHealth;
     private bool facingRight = true;
@@ -57,15 +61,18 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
 
     private void Start()
     {
-        currentHealth = maxHealth;
+        currentHealth = maxHealth_Wolf;
+        lineOfSite_Pivot = 5.0f;
     }
 
     private void FixedUpdate()
     {
+        enemy_Wolf_Position = transform.position;
+
         checkingGround = Physics2D.OverlapCircle(groundCheck_Patrol.position, circleRadius, groundLayer);
         checkingWall = Physics2D.OverlapCircle(wallCheck_Patrol.position, circleRadius, groundLayer);
         isGrounded = Physics2D.OverlapBox(groundCheck_Jump.position, boxSize, 0, groundLayer);
-        canSeePlayer = Physics2D.OverlapBox(transform.position, lineOfSite, 0, playerLayer);
+        canSeePlayer = Physics2D.OverlapBox(enemy_Wolf_Position + new Vector3(lineOfSite_Pivot, 0, 0), lineOfSite, 0, playerLayer);
 
         AnimationController();
 
@@ -105,7 +112,7 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
                 Flip();
             }
         }
-        enemy_Wolf_Rb2d.velocity = new Vector2(moveSpeed * moveDirection, enemy_Wolf_Rb2d.velocity.y);
+        enemy_Wolf_Rb2d.velocity = new Vector2(moveSpeed_Wolf * moveDirection, enemy_Wolf_Rb2d.velocity.y);
     }
 
     private void JumpAttack()
@@ -137,6 +144,7 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
         moveDirection *= -1;
         facingRight = !facingRight;
         transform.Rotate(0, 180, 0);
+        lineOfSite_Pivot *= -1;
     }
 
     private void AnimationController()
@@ -155,7 +163,7 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
         Gizmos.DrawCube(groundCheck_Jump.position, boxSize);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireCube(transform.position, lineOfSite);
+        Gizmos.DrawWireCube(enemy_Wolf_Position + new Vector3(lineOfSite_Pivot, 0, 0), lineOfSite);
 
     }
 }

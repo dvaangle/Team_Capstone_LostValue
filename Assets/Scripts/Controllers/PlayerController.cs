@@ -114,6 +114,8 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
+
+        Physics2D.IgnoreLayerCollision(8, 9);
     }
 
     #region Movement Func
