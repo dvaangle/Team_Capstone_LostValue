@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Enemy_PlantController : MonoBehaviour, Damageable
 {
-    #region Variavle
+    #region Variables
 
     [Header("Status")]
     [SerializeField]

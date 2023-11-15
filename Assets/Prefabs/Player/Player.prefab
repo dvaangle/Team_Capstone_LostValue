@@ -330,6 +330,11 @@ MonoBehaviour:
   attackableLayer:
     serializedVersion: 2
     m_Bits: 256
+  health:
+    playerInfo_HealthBar: {fileID: 0}
+    maxValue: 100
+    currentValue: 100
+  playerPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &9168654335292495363
 GameObject:
   m_ObjectHideFlags: 0

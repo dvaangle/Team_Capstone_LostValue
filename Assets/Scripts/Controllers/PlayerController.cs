@@ -13,7 +13,6 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb2D;
     private Collider2D coll;
 
-
     [Header("Movement System")]
     [SerializeField]
     private float moveSpeed; // 움직임 속도
@@ -57,6 +56,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private LayerMask attackableLayer;
 
+    [Header("Player Status")]
+    public PlayerStatus health;
+
     private float moveInput_X;
     private bool canDash = true;
     private bool isDashing;
@@ -67,8 +69,19 @@ public class PlayerController : MonoBehaviour
     private float attackTimeCounter;
     private RaycastHit2D groundHit;
     private RaycastHit2D[] hits;
+    [HideInInspector]
+    public Vector3 playerPosition;
 
     #endregion
+
+    private void Awake()
+    {
+        if(PlayerController.instance == null)
+        {
+            PlayerController.instance = this;
+        }
+        health.Initialize();
+    }
 
     void Start()
     {
@@ -79,6 +92,7 @@ public class PlayerController : MonoBehaviour
         //시작하자마자 공격 할수 있게(없으면 게임 시작하고 딜레이 시간동안 공격x)
         attackTimeCounter = attackDelay;
 
+        Debug.Log(isFacingRight);
         StartDirectionCheck();
     }
 
@@ -110,6 +124,8 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        playerPosition = gameObject.transform.position;
+
         if (isDashing)
         {
             return;

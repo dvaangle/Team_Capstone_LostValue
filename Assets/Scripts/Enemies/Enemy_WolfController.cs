@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Enemy_WolfController : MonoBehaviour, Damageable
 {
-    #region Values
+    #region Variables
 
     [Header("Status")]
     [SerializeField]
@@ -16,7 +16,7 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
 
     [Header("For Patrolling")] //배회 범위 체크는 마름모 모양의 체크포인트 기준으로 벽이 닿거나, 땅이 안닿으면 반대로감
     [SerializeField]
-    private Transform groundCheck_Patrol; 
+    private Transform groundCheck_Patrol;
     [SerializeField]
     private Transform wallCheck_Patrol;
     [SerializeField]
@@ -28,7 +28,7 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
     [SerializeField]
     private float jumpHeight; // 점프 높이
     [SerializeField]
-    private Transform transform_player; // 플레이어 위치 체크 -> 그 위치로 점프
+    private float jumpMultiplier; // 도약이라는 느낌을 줄 변수
     [SerializeField]
     private Transform groundCheck_Jump; // 땅에 닿았을 때만 점프
     [SerializeField]
@@ -117,17 +117,31 @@ public class Enemy_WolfController : MonoBehaviour, Damageable
 
     private void JumpAttack()
     {
-        float distanceFromPlayer = transform_player.position.x - transform.position.x;
+        float distanceFromPlayer_EnemyLeft = PlayerController.instance.playerPosition.x - this.transform.position.x;
+        float distanceFormPlayer_PlayerLeft = this.transform.position.x - PlayerController.instance.playerPosition.x;
 
-        if(isGrounded)
+        float distanceFromPlayer_EnemyLeft_Value = Mathf.Abs(distanceFromPlayer_EnemyLeft);
+        float distanceFormPlayer_PlayerLeft_Value = Mathf.Abs(distanceFormPlayer_PlayerLeft);
+
+        if (isGrounded)
         {
-            enemy_Wolf_Rb2d.AddForce(new Vector2(distanceFromPlayer, jumpHeight), ForceMode2D.Impulse);
+            if (PlayerController.instance.playerPosition.x < this.transform.position.x)
+            {   
+                enemy_Wolf_Rb2d.AddForce(new Vector2(distanceFormPlayer_PlayerLeft_Value * jumpMultiplier * -1, jumpHeight), ForceMode2D.Impulse);
+                Debug.Log(PlayerController.instance.playerPosition.x + "," + this.transform.position.x);
+                Debug.Log(distanceFormPlayer_PlayerLeft_Value);
+            }
+            else if (PlayerController.instance.playerPosition.x > this.transform.position.x)
+            {
+                enemy_Wolf_Rb2d.AddForce(new Vector2(distanceFromPlayer_EnemyLeft_Value * jumpMultiplier, jumpHeight), ForceMode2D.Impulse);
+                Debug.Log(distanceFromPlayer_EnemyLeft_Value);
+            }
         }
     }
 
     private void FlipTowardsPlayer()
     {
-        float playerPosition = transform_player.position.x - transform.position.x;
+        float playerPosition = PlayerController.instance.playerPosition.x - this.transform.position.x;
         
         if(playerPosition < 0 && facingRight)
         {
